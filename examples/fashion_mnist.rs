@@ -1,8 +1,9 @@
 use image::*;
 use mnist::*;
 use ndarray::prelude::*;
-use show_image::{make_window_full, Event, WindowOptions};
+use show_image::{create_window, event, WindowOptions};
 
+#[show_image::main]
 fn main() {
     let (trn_size, _rows, _cols) = (50_000, 28, 28);
 
@@ -27,24 +28,22 @@ fn main() {
         .mapv(|x| x as f32 / 256.);
 
     let image = bw_ndarray2_to_rgb_image(train_data.slice(s![item_num, .., ..]).to_owned());
-    let window_options = WindowOptions {
-        name: "image".to_string(),
-        size: [100, 100],
-        resizable: true,
-        preserve_aspect_ratio: true,
-    };
-    let window = make_window_full(window_options).unwrap();
-    window.set_image(image, "test_result").unwrap();
+    let window_options = WindowOptions::new().set_size(Some([100, 100]));
+    let window = create_window("image", window_options).unwrap();
+    window.set_image("test_result", image).unwrap();
 
-    for event in window.events() {
-        if let Event::KeyboardEvent(event) = event {
-            if event.key == show_image::KeyCode::Escape {
+    // Wait for the window to be closed or Escape to be pressed.
+    for event in window.event_channel().map_err(|e| e.to_string()).unwrap() {
+        if let event::WindowEvent::KeyboardInput(event) = event {
+            if !event.is_synthetic
+                && event.input.key_code == Some(event::VirtualKeyCode::Escape)
+                && event.input.state.is_pressed()
+            {
+                println!("Escape pressed!");
                 break;
             }
         }
     }
-
-    show_image::stop().unwrap();
 }
 
 fn return_item_description_from_number(val: u8) {

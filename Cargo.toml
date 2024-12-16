@@ -1,7 +1,7 @@
 [package]
 name = "mnist"
 description = "MNIST data set parser."
-version = "0.6.0"
+version = "0.6.1"
 authors = ["David McNeil <mcneil.david2@gmail.com>"]
 repository = "https://github.com/davidMcneil/mnist"
 documentation = "https://docs.rs/mnist"
@@ -28,7 +28,6 @@ pbr = {version = "1.0", optional = true}
 flate2 = {version = "1.0.2", optional = true, features = ["rust_backend"], default-features = false}
 
 [dev-dependencies]
-ndarray = "0.14"
-image = "0.23"
-# show-image is used to visualize datasets in a pop-up window
-show-image = {version = "0.6", features = ["image"]}
+ndarray = "0.16.1"
+image = "0.25.5"
+show-image = { version = "0.14.0", git = "https://github.com/robohouse-delft/show-image-rs.git", features = ["image", "png"] }

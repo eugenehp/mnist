@@ -100,8 +100,22 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 
+// From https://github.com/cvdfoundation/mnist
+
+// Training
+// https://storage.googleapis.com/cvdf-datasets/mnist/train-images-idx3-ubyte.gz
+// https://storage.googleapis.com/cvdf-datasets/mnist/train-labels-idx1-ubyte.gz
+
+// Testing
+// https://storage.googleapis.com/cvdf-datasets/mnist/t10k-images-idx3-ubyte.gz
+// https://storage.googleapis.com/cvdf-datasets/mnist/t10k-labels-idx1-ubyte.gz
+
 static BASE_PATH: &str = "data/";
-static BASE_URL: &str = "http://yann.lecun.com/exdb/mnist";
+// old, doesn't work, gives 404
+// static BASE_URL: &str = "http://yann.lecun.com/exdb/mnist";
+static BASE_URL: &str = "https://storage.googleapis.com/cvdf-datasets/mnist/";
+
+#[allow(dead_code)]
 static FASHION_BASE_URL: &str = "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com";
 static TRN_IMG_FILENAME: &str = "train-images-idx3-ubyte";
 static TRN_LBL_FILENAME: &str = "train-labels-idx1-ubyte";
@@ -401,6 +415,7 @@ impl<'a> MnistBuilder<'a> {
     /// If `trn_len + val_len + tst_len > 70,000`.
     pub fn finalize(&self) -> Mnist {
         if self.download_and_extract {
+            #[cfg(feature = "download")]
             let base_url = if self.use_fashion_data {
                 FASHION_BASE_URL
             } else if self.base_url != BASE_URL {
@@ -430,10 +445,9 @@ impl<'a> MnistBuilder<'a> {
         let available_length = (TRN_LEN + TST_LEN) as usize;
         assert!(
             total_length <= available_length,
-            format!(
-                "Total data set length ({}) greater than maximum possible length ({}).",
-                total_length, available_length
-            )
+            "Total data set length ({}) greater than maximum possible length ({}).",
+            total_length,
+            available_length
         );
         let mut trn_img = images(
             &Path::new(self.base_path).join(self.trn_img_filename),
@@ -457,8 +471,8 @@ impl<'a> MnistBuilder<'a> {
         let mut val_lbl = trn_lbl.split_off(trn_len);
         let mut tst_img = val_img.split_off(val_len * ROWS * COLS);
         let mut tst_lbl = val_lbl.split_off(val_len);
-        tst_img.split_off(tst_len * ROWS * COLS);
-        tst_lbl.split_off(tst_len);
+        let _ = tst_img.split_off(tst_len * ROWS * COLS);
+        let _ = tst_lbl.split_off(tst_len);
         if self.lbl_format == LabelFormat::OneHotVector {
             fn digit2one_hot(v: Vec<u8>) -> Vec<u8> {
                 v.iter()
@@ -559,20 +573,18 @@ fn labels(path: &Path, expected_length: u32) -> Vec<u8> {
         .unwrap_or_else(|_| panic!("Unable to read magic number from {:?}.", path));
     assert!(
         LBL_MAGIC_NUMBER == magic_number,
-        format!(
-            "Expected magic number {} got {}.",
-            LBL_MAGIC_NUMBER, magic_number
-        )
+        "Expected magic number {} got {}.",
+        LBL_MAGIC_NUMBER,
+        magic_number
     );
     let length = file
         .read_u32::<BigEndian>()
         .unwrap_or_else(|_| panic!("Unable to length from {:?}.", path));
     assert!(
         expected_length == length,
-        format!(
-            "Expected data set length of {} got {}.",
-            expected_length, length
-        )
+        "Expected data set length of {} got {}.",
+        expected_length,
+        length
     );
     file.bytes().map(|b| b.unwrap()).collect()
 }
@@ -596,20 +608,18 @@ fn images(path: &Path, expected_length: u32) -> Vec<u8> {
         .unwrap_or_else(|_| panic!("Unable to read magic number from {:?}.", path));
     assert!(
         IMG_MAGIC_NUMBER == magic_number,
-        format!(
-            "Expected magic number {} got {}.",
-            IMG_MAGIC_NUMBER, magic_number
-        )
+        "Expected magic number {} got {}.",
+        IMG_MAGIC_NUMBER,
+        magic_number
     );
     let length = file
         .read_u32::<BigEndian>()
         .unwrap_or_else(|_| panic!("Unable to length from {:?}.", path));
     assert!(
         expected_length == length,
-        format!(
-            "Expected data set length of {} got {}.",
-            expected_length, length
-        )
+        "Expected data set length of {} got {}.",
+        expected_length,
+        length
     );
     let rows = file
         .read_u32::<BigEndian>()
@@ -617,7 +627,9 @@ fn images(path: &Path, expected_length: u32) -> Vec<u8> {
         as usize;
     assert!(
         ROWS == rows,
-        format!("Expected rows length of {} got {}.", ROWS, rows)
+        "Expected rows length of {} got {}.",
+        ROWS,
+        rows
     );
     let cols = file
         .read_u32::<BigEndian>()
@@ -625,7 +637,9 @@ fn images(path: &Path, expected_length: u32) -> Vec<u8> {
         as usize;
     assert!(
         COLS == cols,
-        format!("Expected cols length of {} got {}.", COLS, cols)
+        "Expected cols length of {} got {}.",
+        COLS,
+        cols
     );
     // Convert `file` from a Vec to a slice.
     file.to_vec()

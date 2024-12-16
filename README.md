@@ -57,3 +57,19 @@ An example of downloading this dataset may be found by running:
 ```sh
 $ cargo run --features download --example fashion_mnist
 ```
+
+## Troubleshooting
+
+### On Mac
+
+
+`ld: library not found for -lSDL2`
+
+```shell
+brew link sdl2
+brew unlink sdl2 && brew link sdl2
+export LIBRARY_PATH="$LIBRARY_PATH:/opt/homebrew/lib" # needed to link to SDL2 library
+
+cargo clean
+cargo run --example mnist -F download
+```

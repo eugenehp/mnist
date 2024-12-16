@@ -11,7 +11,10 @@ use pbr::ProgressBar;
 use std::convert::TryInto;
 use std::thread;
 
+#[allow(unused)]
 use log::Level;
+
+use std::time::Duration;
 
 #[cfg(target_family = "unix")]
 use std::os::unix::fs::MetadataExt;
@@ -19,7 +22,7 @@ use std::os::unix::fs::MetadataExt;
 use std::os::windows::fs::MetadataExt;
 
 #[cfg(target_family = "unix")]
-fn file_size(meta: &MetadataExt) -> usize {
+fn file_size(meta: &dyn MetadataExt) -> usize {
     meta.size() as usize
 }
 
@@ -70,6 +73,7 @@ pub(super) fn download_and_extract(
     Ok(())
 }
 
+#[allow(unused_variables)]
 fn download(
     base_url: &str,
     archive: &str,
@@ -81,10 +85,10 @@ fn download(
     let url = Path::new(base_url).join(archive);
     let file_name = download_dir.to_str().unwrap().to_owned() + archive; //.clone();
     if Path::new(&file_name).exists() {
-            log::info!(
-                "  File {:?} already exists, skipping downloading.",
-                file_name
-            );
+        log::info!(
+            "  File {:?} already exists, skipping downloading.",
+            file_name
+        );
     } else {
         log::info!(
             "- Downloading from file from {} and saving to file as: {}",
@@ -105,7 +109,7 @@ fn download(
                 current_size = file_size(&meta);
 
                 pb.set(current_size.try_into().unwrap());
-                thread::sleep_ms(10);
+                thread::sleep(Duration::from_millis(10));
             }
             pb.finish_println(" ");
         });
